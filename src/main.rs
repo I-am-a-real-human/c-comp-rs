@@ -19,10 +19,21 @@ struct Token {
     line: usize,
 }
 
+impl Token {
+    fn from_token_type(&self, token_type : TokenType) -> Token {
+        Token {
+            token_type : token_type,
+            lexeme: "".to_string(),
+            literal: "".to_string(),
+        }
+    }
+}
+
+
 #[derive(Debug)]
 struct Lexer {
     source: String,
-    tokens: Vec<TokenType>,
+    tokens: Vec<Token>,
     start: usize,
     curr_pos: usize,
     line: usize,
@@ -41,7 +52,23 @@ impl Default for Lexer {
 }
 
 impl Lexer {
-    fn scan_token(&self) {}
+
+    fn add_token(&mut self, token_type : TokenType) {
+    }
+
+    fn add_
+
+    fn advance(&mut self) -> char {
+        self.curr_pos += 1;
+        return self.source.as_bytes()[self.curr_pos] as char;
+    }
+
+    fn scan_token(&self) {
+        let c = self.advance();
+        match c {
+            "(" => add_token
+        }
+    }
 
     fn tokenise(&mut self) {
         while !self.eof() {
@@ -51,8 +78,8 @@ impl Lexer {
 
         self.tokens.push(Token {
             token_type: TokenType::EOF,
-            lexeme: "",
-            literal: "",
+            lexeme: "".to_string(),
+            literal: "".to_string(),
             line: self.line,
         });
     }
@@ -67,5 +94,8 @@ fn main() {
         return 0;
     }"
     .to_string();
-    let lexer = Lexer { source: program };
+    let lexer = Lexer {
+        source: program,
+        ..Default::default()
+    };
 }
