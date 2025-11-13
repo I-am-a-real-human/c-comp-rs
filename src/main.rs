@@ -20,11 +20,12 @@ struct Token {
 }
 
 impl Token {
-    fn from_token_type(&self, token_type : TokenType) -> Token {
+    fn from_token_type(&self, token_type : TokenType, line : usize) -> Token {
         Token {
             token_type : token_type,
             lexeme: "".to_string(),
             literal: "".to_string(),
+            line : line,
         }
     }
 }
