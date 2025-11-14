@@ -50,7 +50,6 @@ impl Default for Lexer {
 }
 
 impl Lexer {
-    // TODO add some kind of polymorphic approach to adding tokens with or without lexeme/literal information
     fn add_token(&mut self, token_type: TokenType, literal: String) {
         let text = &self.source[self.start..self.curr_pos];
         self.tokens.push(Token {
