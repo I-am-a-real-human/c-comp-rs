@@ -6,6 +6,7 @@ enum TokenType {
     RPAREN,
     LBRACE,
     RBRACE,
+    COMMA,
     SEMICOLON,
     RETURN,
     EOF,
@@ -30,7 +31,6 @@ impl Token {
     }
 }
 
-
 #[derive(Debug)]
 struct Lexer {
     source: String,
@@ -53,21 +53,32 @@ impl Default for Lexer {
 }
 
 impl Lexer {
-
-    fn add_token(&mut self, token_type : TokenType) {
+    // TODO add some kind of polymorphic approach to adding tokens with or without lexeme/literal information
+    fn add_token(&mut self, token_type: TokenType, literal: String) {
+        let text = &self.source[self.start..self.curr_pos];
+        self.tokens.push(Token {
+            token_type: token_type,
+            lexeme: text.to_string(),
+            literal: literal,
+            line: self.line,
+        });
     }
-
-    fn add_
 
     fn advance(&mut self) -> char {
         self.curr_pos += 1;
         return self.source.as_bytes()[self.curr_pos] as char;
     }
 
-    fn scan_token(&self) {
+    fn scan_token(&mut self) {
         let c = self.advance();
         match c {
-            "(" => add_token
+            '(' => self.add_token(TokenType::LPAREN, "".to_string()),
+            ')' => self.add_token(TokenType::RPAREN, "".to_string()),
+            '{' => self.add_token(TokenType::LBRACE, "".to_string()),
+            '}' => self.add_token(TokenType::RBRACE, "".to_string()),
+            ',' => self.add_token(TokenType::COMMA, "".to_string()),
+            ';' => self.add_token(TokenType::SEMICOLON, "".to_string()),
+            _ => panic!("Unexpected character {}", c),
         }
     }
 
@@ -95,8 +106,13 @@ fn main() {
         return 0;
     }"
     .to_string();
-    let lexer = Lexer {
+    let mut lexer = Lexer {
         source: program,
         ..Default::default()
     };
+    lexer.tokenise();
+
+    for token in lexer.tokens.iter() {
+        print!("{}", token);
+    }
 }
