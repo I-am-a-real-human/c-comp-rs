@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug)]
 enum TokenType {
     KEYWORD(String),
@@ -20,14 +22,9 @@ struct Token {
     line: usize,
 }
 
-impl Token {
-    fn from_token_type(&self, token_type : TokenType, line : usize) -> Token {
-        Token {
-            token_type : token_type,
-            lexeme: "".to_string(),
-            literal: "".to_string(),
-            line : line,
-        }
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}, {}", self.lexeme, self.literal)
     }
 }
 
