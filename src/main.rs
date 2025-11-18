@@ -11,6 +11,8 @@ enum TokenType {
     COMMA,
     SEMICOLON,
     RETURN,
+    BANG,
+    BANG_EQUALS,
     EOF,
 }
 
@@ -78,6 +80,13 @@ impl Lexer {
             '}' => self.add_token(TokenType::RBRACE, "".to_string()),
             ',' => self.add_token(TokenType::COMMA, "".to_string()),
             ';' => self.add_token(TokenType::SEMICOLON, "".to_string()),
+            '!' => {
+                if self.matches('=') {
+                    self.add_token(TokenType::BANG_EQUALS, "".to_string())
+                } else {
+                    self.add_token(TokenType::BANG, "".to_string())
+                }
+            } // TODO add matches check here for BANG_EQUALS
             _ => panic!("Unexpected character {}", c),
         }
     }
