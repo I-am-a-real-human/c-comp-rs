@@ -60,6 +60,10 @@ impl Lexer {
         });
     }
 
+    fn at(&self, pos: usize) -> char {
+        return self.source.as_bytes()[pos] as char;
+    }
+
     fn advance(&mut self) -> char {
         self.curr_pos += 1;
         return self.source.as_bytes()[self.curr_pos] as char;
