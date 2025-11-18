@@ -66,7 +66,7 @@ impl Lexer {
 
     fn advance(&mut self) -> char {
         self.curr_pos += 1;
-        return self.source.as_bytes()[self.curr_pos] as char;
+        return self.at(self.curr_pos);
     }
 
     fn scan_token(&mut self) {
@@ -82,12 +82,24 @@ impl Lexer {
         }
     }
 
+    fn matches(&mut self, expected: char) -> bool {
+        if !self.eof() {
+            if self.at(self.curr_pos) == expected {
+                self.curr_pos += 1;
+                return true;
+            }
+        }
+        return false;
+    }
+
     fn tokenise(&mut self) {
+        // scan file
         while !self.eof() {
             self.start = self.curr_pos;
             self.scan_token();
         }
 
+        // add EOF token before finishing
         self.tokens.push(Token {
             token_type: TokenType::EOF,
             lexeme: "".to_string(),
