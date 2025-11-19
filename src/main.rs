@@ -154,20 +154,25 @@ impl Lexer {
     fn scan_token(&mut self) {
         let c = self.advance();
         match c {
+            // single value token
             '(' => self.add_token(TokenType::LPAREN, "".to_string()),
             ')' => self.add_token(TokenType::RPAREN, "".to_string()),
             '{' => self.add_token(TokenType::LBRACE, "".to_string()),
             '}' => self.add_token(TokenType::RBRACE, "".to_string()),
             ',' => self.add_token(TokenType::COMMA, "".to_string()),
             ';' => self.add_token(TokenType::SEMICOLON, "".to_string()),
-            '!' => {
-                if self.matches('=') {
-                    self.add_token(TokenType::BANG_EQUALS, "".to_string())
-                } else {
-                    self.add_token(TokenType::BANG, "".to_string())
-                }
-            } // TODO add matches check here for BANG_EQUALS
-            _ => panic!("Unexpected character {}", c),
+            '*' => self.add_token(TokenType::STAR, "".to_string()),
+            // conditional tokens
+            '!' => self.conditional_token('=', TokenType::BANG_EQUAL, TokenType::BANG),
+            '=' => self.conditional_token('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
+            '>' => self.conditional_token('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
+            '<' => self.conditional_token('=', TokenType::LESS_EQUAL, TokenType::LESS),
+            '/' => self.parse_slash(),
+            '\n' => self.line += 1,
+            '"' => self.consume_string(),
+            '\'' => self.consume_char(),
+            ' ' | '\r' | '\t' => (),
+            _ => panic!("Unexpected character {}", c), // TODO add digit check here
         }
     }
 
@@ -207,10 +212,12 @@ fn main() {
         return 0;
     }"
     .to_string();
+
     let mut lexer = Lexer {
         source: program,
         ..Default::default()
     };
+
     lexer.tokenise();
 
     for token in lexer.tokens.iter() {
