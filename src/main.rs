@@ -3,16 +3,24 @@ use std::fmt;
 #[derive(Debug)]
 enum TokenType {
     KEYWORD(String),
-    CONSTANT(String),
+    CONSTANT(String), // TODO figure out whether we want to store the string here or as part of the Lexer
     LPAREN,
     RPAREN,
     LBRACE,
     RBRACE,
     COMMA,
+    STAR,
     SEMICOLON,
     RETURN,
     BANG,
-    BANG_EQUALS,
+    BANG_EQUAL,
+    EQUAL_EQUAL,
+    GREATER_EQUAL,
+    GREATER,
+    LESS_EQUAL,
+    LESS,
+    EQUAL,
+    SLASH,
     EOF,
 }
 
