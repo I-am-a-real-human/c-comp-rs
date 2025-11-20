@@ -100,6 +100,14 @@ impl Lexer {
         }
     }
 
+    fn peek_after(&self) -> char {
+        if self.eof() {
+            return '\0';
+        } else {
+            return self.at(self.curr_pos + 1);
+        }
+    }
+
     fn parse_slash(&mut self) {
         // single line comment
         if self.matches('/') {
@@ -125,7 +133,6 @@ impl Lexer {
         }
 
         // need to call this to consume the closing '"'
-
         self.advance();
 
         let constant: String = self.source[self.start + 1..self.curr_pos - 1].to_string();
@@ -139,7 +146,18 @@ impl Lexer {
 
     fn consume_number(&mut self) {
         // similar to string implementation
-        todo!();
+        while self.is_digit(self.peek()) && !self.eof() {
+            self.advance();
+        }
+
+        if self.peek() == '.' && self.is_digit(self.peek_after()) {
+            self.advance();
+        } // TODO - a syntax error could be caught here
+
+        self.add_token(
+            TokenType::CONSTANT(self.source[self.start..self.curr_pos].to_string()),
+            self.source[self.start..self.curr_pos].to_string(),
+        );
     }
 
     fn is_digit(&self, c: char) -> bool {
@@ -172,7 +190,13 @@ impl Lexer {
             '"' => self.consume_string(),
             '\'' => self.consume_char(),
             ' ' | '\r' | '\t' => (),
-            _ => panic!("Unexpected character {}", c), // TODO add digit check here
+            _ => {
+                if self.is_digit(c) {
+                    self.consume_number();
+                } else {
+                    panic!("Unexpected character {}", c)
+                }
+            }
         }
     }
 
