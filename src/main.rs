@@ -275,7 +275,7 @@ impl<'a> Lexer<'a> {
     fn matches(&mut self, expected: char) -> bool {
         if !self.eof() {
             if self.at(self.curr_byte) == Some(expected) {
-                self.curr_byte += 1;
+                self.advance();
                 return true;
             }
         }
