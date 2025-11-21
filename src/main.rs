@@ -62,11 +62,23 @@ impl Default for Lexer {
             start: 0,
             curr_pos: 0,
             line: 1,
+            keywords: HashMap::from([
+                ("return", TokenType::RETURN),
+                ("if", TokenType::IF),
         }
     }
 }
 
 impl Lexer {
+impl<'a> Lexer<'a> {
+    pub fn from_string(source: &'a str) -> Self {
+        Lexer {
+            source,
+            chars: source.chars(),
+            ..Default::default()
+        }
+    }
+
     fn add_token(&mut self, token_type: TokenType, literal: String) {
         let text = &self.source[self.start..self.curr_pos];
         self.tokens.push(Token {
@@ -244,10 +256,7 @@ fn main() {
     }"
     .to_string();
 
-    let mut lexer = Lexer {
-        source: program,
-        ..Default::default()
-    };
+    let mut lexer = Lexer::from_string(program);
 
     lexer.tokenise();
 
