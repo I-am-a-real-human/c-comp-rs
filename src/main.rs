@@ -2,32 +2,32 @@ use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Clone)]
 enum TokenType {
-    IDENTIFIER,
-    CONSTANT,
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
-    COMMA,
-    STAR,
-    SEMICOLON,
-    RETURN,
-    IF,
-    ELSE,
-    INT,
-    FLOAT,
-    CHAR,
-    STRUCT,
-    VOID,
-    BANG,
-    BANG_EQUAL,
-    EQUAL_EQUAL,
-    GREATER_EQUAL,
-    GREATER,
-    LESS_EQUAL,
-    LESS,
-    EQUAL,
-    SLASH,
+    Identifier,
+    Constant,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    Comma,
+    Star,
+    Semicolon,
+    Return,
+    If,
+    Else,
+    Int,
+    Float,
+    Char,
+    Struct,
+    Void,
+    Bang,
+    BangEqual,
+    EqualEqual,
+    GreaterEqual,
+    Greater,
+    LessEqual,
+    Less,
+    Equal,
+    Slash,
     EOF,
 }
 
@@ -66,14 +66,14 @@ impl<'a> Default for Lexer<'a> {
             curr_byte: 0,
             line: 1,
             keywords: HashMap::from([
-                ("return", TokenType::RETURN),
-                ("if", TokenType::IF),
-                ("else", TokenType::ELSE),
-                ("struct", TokenType::STRUCT),
-                ("void", TokenType::VOID),
-                ("int", TokenType::INT),
-                ("float", TokenType::FLOAT),
-                ("char", TokenType::CHAR),
+                ("return", TokenType::Return),
+                ("if", TokenType::If),
+                ("else", TokenType::Else),
+                ("struct", TokenType::Struct),
+                ("void", TokenType::Void),
+                ("int", TokenType::Int),
+                ("float", TokenType::Float),
+                ("char", TokenType::Char),
             ]),
         }
     }
@@ -145,7 +145,7 @@ impl<'a> Lexer<'a> {
                 self.advance();
             }
         } else {
-            self.add_token(TokenType::SLASH, "".to_string());
+            self.add_token(TokenType::Slash, "");
         }
     }
 
@@ -166,8 +166,8 @@ impl<'a> Lexer<'a> {
 
         // FIXME we need to capture the value of the quotation mark instead
         // of +1/-1 below. Either that or at least double-check the value
-        let constant: String = self.source[self.start_byte + 1..self.curr_byte - 1].to_string();
-        self.add_token(TokenType::CONSTANT, constant);
+        let constant = &self.source[self.start_byte + 1..self.curr_byte - 1];
+        self.add_token(TokenType::Constant, constant);
     }
 
     fn consume_char(&mut self) {
@@ -185,7 +185,7 @@ impl<'a> Lexer<'a> {
         if let Some(token_type) = self.keywords.get(text).cloned() {
             self.add_token(token_type, text.to_string());
         } else {
-            self.add_token(TokenType::IDENTIFIER, text.to_string());
+            self.add_token(TokenType::Identifier, text);
         }
     }
 
@@ -200,8 +200,8 @@ impl<'a> Lexer<'a> {
         } // TODO - a syntax error could be caught here
 
         self.add_token(
-            TokenType::CONSTANT,
-            self.source[self.start_byte..self.curr_byte].to_string(),
+            TokenType::Constant,
+            &self.source[self.start_byte..self.curr_byte],
         );
     }
 
@@ -229,18 +229,18 @@ impl<'a> Lexer<'a> {
         let c = self.advance();
         match c {
             // single value token
-            Some('(') => self.add_token(TokenType::LPAREN, "".to_string()),
-            Some(')') => self.add_token(TokenType::RPAREN, "".to_string()),
-            Some('{') => self.add_token(TokenType::LBRACE, "".to_string()),
-            Some('}') => self.add_token(TokenType::RBRACE, "".to_string()),
-            Some(',') => self.add_token(TokenType::COMMA, "".to_string()),
-            Some(';') => self.add_token(TokenType::SEMICOLON, "".to_string()),
-            Some('*') => self.add_token(TokenType::STAR, "".to_string()),
+            Some('(') => self.add_token(TokenType::LParen, ""),
+            Some(')') => self.add_token(TokenType::RParen, ""),
+            Some('{') => self.add_token(TokenType::LBrace, ""),
+            Some('}') => self.add_token(TokenType::RBrace, ""),
+            Some(',') => self.add_token(TokenType::Comma, ""),
+            Some(';') => self.add_token(TokenType::Semicolon, ""),
+            Some('*') => self.add_token(TokenType::Star, ""),
             // conditional tokens
-            Some('!') => self.conditional_token('=', TokenType::BANG_EQUAL, TokenType::BANG),
-            Some('=') => self.conditional_token('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
-            Some('>') => self.conditional_token('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
-            Some('<') => self.conditional_token('=', TokenType::LESS_EQUAL, TokenType::LESS),
+            Some('!') => self.conditional_token('=', TokenType::BangEqual, TokenType::Bang),
+            Some('=') => self.conditional_token('=', TokenType::EqualEqual, TokenType::Equal),
+            Some('>') => self.conditional_token('=', TokenType::GreaterEqual, TokenType::Greater),
+            Some('<') => self.conditional_token('=', TokenType::LessEqual, TokenType::Less),
             Some('/') => self.parse_slash(),
             Some('\n') => self.line += 1,
             Some('"') => self.consume_string(),
