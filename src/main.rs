@@ -1,9 +1,9 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum TokenType {
-    KEYWORD(String),
-    CONSTANT(String), // TODO figure out whether we want to store the string here or as part of the Lexer
+    IDENTIFIER,
+    CONSTANT,
     LPAREN,
     RPAREN,
     LBRACE,
@@ -12,6 +12,13 @@ enum TokenType {
     STAR,
     SEMICOLON,
     RETURN,
+    IF,
+    ELSE,
+    INT,
+    FLOAT,
+    CHAR,
+    STRUCT,
+    VOID,
     BANG,
     BANG_EQUAL,
     EQUAL_EQUAL,
