@@ -75,8 +75,8 @@ impl Lexer {
     }
 
     fn advance(&mut self) -> char {
-        self.curr_pos += 1;
         return self.at(self.curr_pos);
+        self.curr_pos += 1;
     }
 
     fn conditional_token(
