@@ -252,6 +252,7 @@ fn main() {
     lexer.tokenise();
 
     for token in lexer.tokens.iter() {
-        print!("{}", token);
+        print!("{} | ", token);
     }
+    println!("");
 }
