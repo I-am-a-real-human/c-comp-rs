@@ -32,14 +32,14 @@ enum TokenType {
 }
 
 #[derive(Debug)]
-struct Token {
+struct Token<'a> {
     token_type: TokenType,
-    lexeme: String,
-    literal: String,
+    lexeme: &'a str,
+    literal: &'a str,
     line: usize,
 }
 
-impl fmt::Display for Token {
+impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.token_type)
     }
@@ -49,7 +49,7 @@ impl fmt::Display for Token {
 struct Lexer<'a> {
     source: &'a str,
     chars: std::str::Chars<'a>,
-    tokens: Vec<Token>,
+    tokens: Vec<Token<'a>>,
     start_byte: usize,
     curr_byte: usize,
     line: usize,
@@ -88,11 +88,11 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn add_token(&mut self, token_type: TokenType, literal: String) {
+    fn add_token(&mut self, token_type: TokenType, literal: &'a str) {
         let text = &self.source[self.start_byte..self.curr_byte];
         self.tokens.push(Token {
             token_type: token_type,
-            lexeme: text.to_string(),
+            lexeme: text,
             literal: literal,
             line: self.line,
         });
@@ -115,9 +115,9 @@ impl<'a> Lexer<'a> {
         original_token: TokenType,
     ) {
         if self.matches(token) {
-            self.add_token(match_token, "".to_string())
+            self.add_token(match_token, "")
         } else {
-            self.add_token(original_token, "".to_string())
+            self.add_token(original_token, "")
         }
     }
 
@@ -183,7 +183,7 @@ impl<'a> Lexer<'a> {
         let text = &self.source[self.start_byte..self.curr_byte];
 
         if let Some(token_type) = self.keywords.get(text).cloned() {
-            self.add_token(token_type, text.to_string());
+            self.add_token(token_type, text);
         } else {
             self.add_token(TokenType::Identifier, text);
         }
@@ -278,8 +278,8 @@ impl<'a> Lexer<'a> {
         // add EOF token before finishing
         self.tokens.push(Token {
             token_type: TokenType::EOF,
-            lexeme: "".to_string(),
-            literal: "".to_string(),
+            lexeme: "",
+            literal: "",
             line: self.line,
         });
     }
