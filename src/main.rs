@@ -49,8 +49,8 @@ impl fmt::Display for Token {
 struct Lexer {
     source: String,
     tokens: Vec<Token>,
-    start: usize,
-    curr_pos: usize,
+    start_byte: usize,
+    curr_byte: usize,
     line: usize,
 }
 
