@@ -113,11 +113,11 @@ impl<'a> Lexer<'a> {
         token: char,
         match_token: TokenType,
         original_token: TokenType,
-    ) {
+    ) -> TokenType {
         if self.matches(token) {
-            self.add_token(match_token, "")
+            match_token
         } else {
-            self.add_token(original_token, "")
+            original_token
         }
     }
 
@@ -237,10 +237,24 @@ impl<'a> Lexer<'a> {
             Some(';') => self.add_token(TokenType::Semicolon, ""),
             Some('*') => self.add_token(TokenType::Star, ""),
             // conditional tokens
-            Some('!') => self.conditional_token('=', TokenType::BangEqual, TokenType::Bang),
-            Some('=') => self.conditional_token('=', TokenType::EqualEqual, TokenType::Equal),
-            Some('>') => self.conditional_token('=', TokenType::GreaterEqual, TokenType::Greater),
-            Some('<') => self.conditional_token('=', TokenType::LessEqual, TokenType::Less),
+            Some('!') => {
+                let token_type = self.conditional_token('=', TokenType::BangEqual, TokenType::Bang);
+                self.add_token(token_type, "");
+            }
+            Some('=') => {
+                let token_type =
+                    self.conditional_token('=', TokenType::EqualEqual, TokenType::Equal);
+                self.add_token(token_type, "");
+            }
+            Some('>') => {
+                let token_type =
+                    self.conditional_token('=', TokenType::GreaterEqual, TokenType::Greater);
+                self.add_token(token_type, "");
+            }
+            Some('<') => {
+                let token_type = self.conditional_token('=', TokenType::LessEqual, TokenType::Less);
+                self.add_token(token_type, "");
+            }
             Some('/') => self.parse_slash(),
             Some('\n') => self.line += 1,
             Some('"') => self.consume_string(),
