@@ -205,6 +205,10 @@ impl<'a> Lexer<'a> {
 
         if self.peek() == Some('.') && self.is_digit(self.peek_after()) {
             self.advance();
+            // keep going until number has been consumed
+            while self.is_digit(self.peek()) {
+                self.advance();
+            }
         } // TODO - a syntax error could be caught here
 
         self.add_token(
