@@ -310,7 +310,8 @@ impl<'a> Lexer<'a> {
 
 fn main() {
     let program = "int main(void) {
-        return 0==0;
+        char* str = \"string here
+        return 0=0;
     }";
 
     let mut lexer = Lexer::from_string(program);
