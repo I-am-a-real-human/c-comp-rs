@@ -58,6 +58,7 @@ struct Lexer<'a> {
     start_byte: usize,
     curr_byte: usize,
     line: usize,
+    col: usize,
     keywords: HashMap<&'static str, TokenType>,
 }
 
@@ -70,6 +71,7 @@ impl<'a> Default for Lexer<'a> {
             start_byte: 0,
             curr_byte: 0,
             line: 1,
+            col: 1,
             keywords: HashMap::from([
                 ("return", TokenType::Return),
                 ("if", TokenType::If),
@@ -110,6 +112,7 @@ impl<'a> Lexer<'a> {
     fn advance(&mut self) -> Option<char> {
         let c = self.chars.next()?;
         self.curr_byte += c.len_utf8();
+        self.col += 1;
         Some(c)
     }
 
@@ -261,7 +264,10 @@ impl<'a> Lexer<'a> {
                 self.add_token(token_type, "");
             }
             Some('/') => self.parse_slash(),
-            Some('\n') => self.line += 1,
+            Some('\n') => {
+                self.line += 1;
+                self.col = 0;
+            }
             Some('"') => self.consume_string(),
             Some('\'') => self.consume_char(),
             Some(' ') | Some('\r') | Some('\t') => (),
