@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, fs};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum TokenType {
     Identifier,
     Constant,
@@ -39,6 +39,7 @@ struct Token<'a> {
     line: usize,
 }
 
+#[derive(Debug)]
 enum LexerError {
     UnterminatedString { line: usize, col: usize },
     UnexpectedChar { line: usize, col: usize, char: char },
@@ -95,7 +96,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn add_token(&mut self, token_type: TokenType, literal: &'a str) {
+    fn add_token(&mut self, token_type: TokenType, literal: &'a str) -> Result<(), LexerError> {
         let text = &self.source[self.start_byte..self.curr_byte];
         self.tokens.push(Token {
             token_type: token_type,
@@ -103,6 +104,7 @@ impl<'a> Lexer<'a> {
             literal: literal,
             line: self.line,
         });
+        Ok(())
     }
 
     fn at(&self, pos: usize) -> Option<char> {
@@ -145,7 +147,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_slash(&mut self) {
+    fn parse_slash(&mut self) -> Result<(), LexerError> {
         // single line comment
         if self.matches('/') {
             // consume until end of line or EOF
@@ -155,9 +157,11 @@ impl<'a> Lexer<'a> {
         } else {
             self.add_token(TokenType::Slash, "");
         }
+
+        Ok(())
     }
 
-    fn consume_string(&mut self) {
+    fn consume_string(&mut self) -> Result<(), LexerError> {
         while self.peek() != Some('"') && !self.eof() {
             if self.peek() == Some('\n') {
                 self.line += 1;
@@ -166,7 +170,10 @@ impl<'a> Lexer<'a> {
         }
 
         if self.eof() {
-            panic!("Unterminated string at line {}", self.line);
+            return Err(LexerError::UnterminatedString {
+                line: self.line,
+                col: self.col,
+            });
         }
 
         // need to call this to consume the closing '"'
@@ -176,6 +183,7 @@ impl<'a> Lexer<'a> {
         // of +1/-1 below. Either that or at least double-check the value
         let constant = &self.source[self.start_byte + 1..self.curr_byte - 1];
         self.add_token(TokenType::Constant, constant);
+        Ok(())
     }
 
     fn consume_char(&mut self) {
@@ -237,7 +245,7 @@ impl<'a> Lexer<'a> {
         false
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), LexerError> {
         let c = self.advance();
         match c {
             // single value token
@@ -251,37 +259,44 @@ impl<'a> Lexer<'a> {
             // conditional tokens
             Some('!') => {
                 let token_type = self.conditional_token('=', TokenType::BangEqual, TokenType::Bang);
-                self.add_token(token_type, "");
+                self.add_token(token_type, "")
             }
             Some('=') => {
                 let token_type =
                     self.conditional_token('=', TokenType::EqualEqual, TokenType::Equal);
-                self.add_token(token_type, "");
+                self.add_token(token_type, "")
             }
             Some('>') => {
                 let token_type =
                     self.conditional_token('=', TokenType::GreaterEqual, TokenType::Greater);
-                self.add_token(token_type, "");
+                self.add_token(token_type, "")
             }
             Some('<') => {
                 let token_type = self.conditional_token('=', TokenType::LessEqual, TokenType::Less);
-                self.add_token(token_type, "");
+                self.add_token(token_type, "")
             }
             Some('/') => self.parse_slash(),
             Some('\n') => {
                 self.line += 1;
                 self.col = 0;
+                Ok(())
             }
             Some('"') => self.consume_string(),
-            Some('\'') => self.consume_char(),
-            Some(' ') | Some('\r') | Some('\t') => (),
+            Some('\'') => Ok(self.consume_char()),
+            Some(' ') | Some('\r') | Some('\t') => Ok(()),
             _ => {
                 if self.is_digit(c) {
                     self.consume_number();
+                    Ok(())
                 } else if self.is_alpha(c) {
                     self.consume_identifier();
+                    Ok(())
                 } else {
-                    panic!("Unexpected character {c:?}")
+                    Err(LexerError::UnexpectedChar {
+                        line: self.line,
+                        col: self.col,
+                        char: c.expect("Error reporting UnexpectedChar"),
+                    })
                 }
             }
         }
@@ -297,11 +312,16 @@ impl<'a> Lexer<'a> {
         return false;
     }
 
-    fn tokenise(&mut self) {
+    fn tokenise(&mut self) -> Result<&Vec<Token<'a>>, Vec<LexerError>> {
+        let mut errors = Vec::new();
+
         // scan file
         while !self.eof() {
             self.start_byte = self.curr_byte;
-            self.scan_token();
+
+            if let Err(e) = self.scan_token() {
+                errors.push(e);
+            }
         }
 
         // add EOF token before finishing
@@ -311,6 +331,12 @@ impl<'a> Lexer<'a> {
             literal: "",
             line: self.line,
         });
+
+        if errors.is_empty() {
+            return Ok(&self.tokens);
+        }
+        Err(errors)
+        // }
     }
 
     fn eof(&self) -> bool {
@@ -318,15 +344,109 @@ impl<'a> Lexer<'a> {
     }
 }
 
+#[cfg(test)]
+mod lexer_tests {
+    use super::*;
+
+    #[test]
+    fn lex_catch_unterminated_string() {
+        let source = "int main(void) {\nchar* str = \"string here\nreturn 0=0;\n}";
+        let mut lexer = Lexer::from_string(&source);
+        let result = lexer.tokenise();
+        match result {
+            Ok(_) => {
+                assert!(false);
+            }
+            Err(mut errors) => {
+                assert_eq!(errors.len(), 1);
+                let error = errors.pop().unwrap();
+                assert!(matches!(error, LexerError::UnterminatedString { .. }));
+            }
+        }
+    }
+    #[test]
+    fn lex_tokenizes_simple_return_statement() {
+        let source = "return 42;";
+        let mut lexer = Lexer::from_string(source);
+        let tokens = lexer.tokenise().expect("Should tokenise without errors");
+
+        let token_types: Vec<_> = tokens.iter().map(|t| t.token_type.clone()).collect();
+
+        assert!(token_types.contains(&TokenType::Return));
+        assert!(token_types.contains(&TokenType::Constant));
+        assert!(token_types.contains(&TokenType::Semicolon));
+    }
+
+    #[test]
+    fn lex_identifiers_and_keywords() {
+        let source = "int var = 100;";
+        let mut lexer = Lexer::from_string(source);
+        let tokens = lexer.tokenise().expect("Should tokenise without errors");
+
+        let mut found_int = false;
+        let mut found_identifier = false;
+        for t in tokens {
+            match t.token_type {
+                TokenType::Int => found_int = true,
+                TokenType::Identifier => found_identifier = true,
+                _ => {}
+            }
+        }
+        assert!(found_int);
+        assert!(found_identifier);
+    }
+
+    #[test]
+    fn lex_catches_unexpected_character() {
+        let source = "int @";
+        let mut lexer = Lexer::from_string(source);
+        let result = lexer.tokenise();
+        match result {
+            Ok(_) => panic!("Expected error on unexpected character"),
+            Err(mut errors) => {
+                assert_eq!(errors.len(), 1);
+                let err = errors.pop().unwrap();
+                assert!(matches!(err, LexerError::UnexpectedChar { .. }));
+            }
+        }
+    }
+
+    #[test]
+    fn handles_empty_input() {
+        let source = "";
+        let mut lexer = Lexer::from_string(source);
+        let tokens = lexer.tokenise().expect("Should handle empty input");
+        // Expect only EOF token
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens[0].token_type, TokenType::EOF);
+    }
+}
+
 fn main() {
-    let program = "int main(void) {
-        char* str = \"string here
-        return 0=0;
-    }";
+    let args: Vec<String> = std::env::args().collect();
 
-    let mut lexer = Lexer::from_string(program);
+    if args.len() <= 1 {
+        println!("fcc help TODO");
+    }
 
-    lexer.tokenise();
+    let source = fs::read_to_string(&args[1]).expect("Couldn't read file '{}'");
+    let mut lexer = Lexer::from_string(&source);
+
+    let result = lexer.tokenise();
+
+    match result {
+        Ok(tokens) => {
+            for token in tokens.iter() {
+                println!("{} | ", token);
+            }
+        }
+        Err(errors) => {
+            for error in errors {
+                eprintln!("Syntax error: {:?}", error);
+            }
+            std::process::exit(1);
+        }
+    }
 
     for token in lexer.tokens.iter() {
         print!("{} | ", token);
