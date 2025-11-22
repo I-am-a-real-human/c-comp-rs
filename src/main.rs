@@ -39,6 +39,11 @@ struct Token<'a> {
     line: usize,
 }
 
+enum LexerError {
+    UnterminatedString { line: usize, col: usize },
+    UnexpectedChar { line: usize, col: usize, char: char },
+}
+
 impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.token_type)
