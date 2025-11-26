@@ -33,7 +33,7 @@ pub enum TokenType {
 
 #[derive(Debug)]
 pub struct Token<'a> {
-    token_type: TokenType,
+    pub(crate) token_type: TokenType,
     lexeme: &'a str,
     literal: &'a str,
     line: usize,
