@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt, fs};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TokenType {
     Identifier,
     Constant,
