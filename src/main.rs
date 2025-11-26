@@ -1,6 +1,7 @@
 use std::fs;
 mod lexer;
-use crate::lexer::{Lexer, Token, TokenType};
+mod parser;
+use crate::lexer::Lexer;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
