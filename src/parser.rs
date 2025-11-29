@@ -1,6 +1,10 @@
-use crate::lexer::{Lexer, Token, TokenType};
+use core::panic;
 
-enum ParerError {}
+use crate::lexer::{Token, TokenType};
+
+enum ParserError {
+    UnclosedParen,
+}
 
 struct Parser<'a> {
     tokens: Vec<Token<'a>>,
@@ -13,6 +17,10 @@ struct Parser<'a> {
 enum Expr<'a> {
     Binary {
         left: Box<Expr<'a>>,
+        operator: Token<'a>,
+        right: Box<Expr<'a>>,
+    },
+    Unary {
         operator: Token<'a>,
         right: Box<Expr<'a>>,
     },
@@ -57,6 +65,73 @@ impl<'a> Parser<'a> {
 
         expr
     }
+    fn consume(&self, token_type: TokenType, message: &str) -> Result<Token, ParserError> {
+        if self.check(token_type) {
+            return Ok(self.advance());
+        }
+
+        panic!("{}", message);
+    }
+
+    fn primary(&self) -> Option<Expr> {
+        if self.matches(&[TokenType::False]) {
+            return Some(Expr::Literal(self.previous()));
+        } else if self.matches(&[TokenType::True]) {
+            return Some(Expr::Literal(self.previous()));
+        } else if self.matches(&[TokenType::Constant]) {
+            return Some(Expr::Literal(self.previous()));
+        } else if self.matches(&[TokenType::LParen]) {
+            let expr = self.expression();
+            self.consume(TokenType::RParen, "Expect ')' after expression");
+            return Some(Expr::Grouping(Box::new(expr)));
+        }
+
+        None
+    }
+
+    fn unary(&self) -> Expr {
+        if self.matches(&[TokenType::Bang, TokenType::Minus]) {
+            let op = self.previous();
+            let right = self.unary();
+            return Expr::Unary {
+                operator: op,
+                right: Box::new(right),
+            };
+        }
+
+        self.primary().expect("something went wrong here?")
+    }
+
+    fn factor(&self) -> Expr {
+        let mut expr = self.unary();
+        while self.matches(&[TokenType::Slash, TokenType::Star]) {
+            let op = self.previous();
+            let right = self.unary();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: op,
+                right: Box::new(right),
+            }
+        }
+
+        expr
+    }
+
+    fn term(&self) -> Expr {
+        let mut expr = self.factor();
+
+        while self.matches(&[TokenType::Minus, TokenType::Plus]) {
+            let op = self.previous();
+            let right = self.factor();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: op,
+                right: Box::new(right),
+            };
+        }
+
+        expr
+    }
 
     fn comparison(&self) -> Expr {
         let expr: Expr = self.term();
@@ -70,9 +145,9 @@ impl<'a> Parser<'a> {
             let operator = self.previous();
             let right = self.term();
             expr = Expr::Binary {
-                left: expr,
+                left: Box::new(expr),
                 operator: operator,
-                right: right,
+                right: Box::new(right),
             }
         }
 
