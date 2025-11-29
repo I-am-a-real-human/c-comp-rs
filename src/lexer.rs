@@ -35,7 +35,7 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Token<'a> {
     pub(crate) token_type: TokenType,
     lexeme: &'a str,
