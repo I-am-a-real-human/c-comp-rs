@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt, fs};
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TokenType {
