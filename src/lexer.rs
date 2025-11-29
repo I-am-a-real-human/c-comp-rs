@@ -86,6 +86,8 @@ impl<'a> Default for Lexer<'a> {
                 ("int", TokenType::Int),
                 ("float", TokenType::Float),
                 ("char", TokenType::Char),
+                ("true", TokenType::True),
+                ("false", TokenType::False),
             ]),
         }
     }
