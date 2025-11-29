@@ -40,7 +40,7 @@ pub struct Token<'a> {
     pub(crate) token_type: TokenType,
     lexeme: &'a str,
     pub(crate) literal: &'a str,
-    line: usize,
+    pub(crate) line: usize,
 }
 
 #[derive(Debug)]
