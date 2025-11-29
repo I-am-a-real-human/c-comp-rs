@@ -39,7 +39,7 @@ pub enum TokenType {
 pub struct Token<'a> {
     pub(crate) token_type: TokenType,
     lexeme: &'a str,
-    literal: &'a str,
+    pub(crate) literal: &'a str,
     line: usize,
 }
 
@@ -429,5 +429,3 @@ mod lexer_tests {
         assert_eq!(tokens[0].token_type, TokenType::EOF);
     }
 }
-
-
