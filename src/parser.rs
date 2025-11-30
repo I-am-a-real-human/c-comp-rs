@@ -19,6 +19,29 @@ pub(crate) enum ParserError {
     UnexpectedEOF,
 }
 
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParserError::UnclosedParen => write!(f, "Uncloses Parenthesis"),
+            ParserError::UnexpectedEOF => write!(f, "Unexpected end of input"),
+            ParserError::UnknownPrimaryToken { line, token_type } => {
+                write!(
+                    f,
+                    "On line {}, unknown primary token '{:?}'",
+                    line, token_type
+                )
+            }
+            ParserError::ExpectedToken {
+                expected, found, ..
+            } => write!(f, "Expected token '{:?}', found '{:?}'", expected, found),
+            ParserError::NoPreviousToken => write!(f, "No previous token"),
+            ParserError::UnknownError => write!(f, "You're on your own pal"),
+        }
+    }
+}
+
+impl Error for ParserError {}
+
 /// Representation of expression objects for creation of syntax tree. Contains
 /// five types of expression objects:
 /// * **Binary**: standard binary expression of <left> <operator> <right> (e.g.
@@ -41,6 +64,68 @@ pub(crate) enum Expr<'a> {
     Literal(&'a str),
     Identifier(&'a Token<'a>),
     Grouping(Box<Expr<'a>>),
+}
+
+impl<'a> Expr<'a> {
+    pub fn print_tree(&self) -> String {
+        let mut tree = String::new();
+        Self::print_tree_unicode(self, &mut tree, 0, true);
+        tree
+    }
+
+    fn print_tree_unicode(expr: &Self, output: &mut String, depth: usize, is_last: bool) {
+        // TODO make indent customisable
+        let indent = "  ".repeat(depth);
+        let connector = if is_last { "└─ " } else { "├─ " };
+
+        let type_name = match expr {
+            Expr::Binary { .. } => "Binary",
+            Expr::Unary { .. } => "Unary",
+            Expr::Literal { .. } => "Literal",
+            Expr::Grouping { .. } => "Grouping",
+            _ => "Unknown",
+        };
+
+        let details = Self::format_node(expr);
+
+        writeln!(
+            output,
+            "{}{}┌─ {} ({})",
+            indent, connector, type_name, details
+        )
+        .unwrap();
+
+        match expr {
+            Expr::Binary {
+                left,
+                // operator,
+                right,
+                ..
+            } => {
+                Self::print_tree_unicode(left, output, depth + 1, false);
+                // Self::print_tree_unicode(operator, output, depth + 1, false);
+                Self::print_tree_unicode(right, output, depth + 1, true);
+            }
+            Expr::Unary { right, .. } => {
+                // Self::print_tree_unicode(&**operator, output, depth + 1, false);
+                Self::print_tree_unicode(right, output, depth + 1, true);
+            }
+            Expr::Grouping(expr) => {
+                Self::print_tree_unicode(expr, output, depth + 1, true);
+            }
+            Expr::Literal { .. } | Expr::Identifier { .. } => (),
+        }
+    }
+
+    fn format_node(expr: &Self) -> String {
+        match expr {
+            Expr::Binary { operator, .. } => format!("{:?}", operator.token_type),
+            Expr::Unary { operator, .. } => format!("{:?}", operator.token_type),
+            Expr::Literal(token) => format!("{:?}", token),
+            Expr::Grouping(_) => "(...)".to_string(),
+            Expr::Identifier(token) => format!("{:?}", token),
+        }
+    }
 }
 
 /// Simple recursive descent parser for the C language. Takes a iterable list
