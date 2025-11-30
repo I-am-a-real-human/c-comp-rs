@@ -69,6 +69,13 @@ pub(crate) enum Expr<'a> {
     Grouping(Box<Expr<'a>>),
 }
 
+pub(crate) enum Statement<'a> {
+    Expression(Expr<'a>),
+    Return { keyword: &'a Token<'a> , value: Option<Expr<'a>> },
+    VarDecl { name: &'a Token<'a>, initialiser: Option<Expr<'a>> },
+    Function {name: &'a Token<'a>, params: Vec<&'a Token<'a>>, body: Vec<Statement<'a>> },
+}
+
 impl<'a> Expr<'a> {
     pub fn print_tree(&self) -> String {
         let mut tree = String::new();
@@ -318,10 +325,16 @@ impl<'a> Parser<'a> {
         Ok(token)
     }
 
-    /// Top-level parsing function. Begins the parsing
-    /// procedure with the `expression()` function.
-    pub fn parse(&mut self) -> Result<Expr<'a>, ParserError> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Statement<'a>>, ParserError> {
+        let mut statements = vec![];
+        while !self.eof() {
+            statements.push(self.declaration()?);
+        }
+        Ok(statements)
+    }
+
+    fn declaration(&mut self) -> Result<Statement<'a>, ParserError> {
+     if self.matches(&)
     }
 
     pub(crate) fn print(&self) {}
