@@ -1,13 +1,16 @@
+use crate::lexer::{Token, TokenType};
+use core::fmt;
+use std::error::Error;
+use std::fmt::Write;
 use std::iter::Peekable;
 use std::slice::Iter;
-
-use crate::lexer::{Token, TokenType};
 
 #[derive(Debug)]
 pub(crate) enum ParserError {
     UnclosedParen,
     UnknownPrimaryToken {
         line: usize,
+        token_type: TokenType,
     },
     UnknownError,
     NoPreviousToken,
@@ -203,14 +206,17 @@ impl<'a> Parser<'a> {
                     let token = self.advance()?;
                     return Ok(Expr::Literal(token.literal));
                 }
-                TokenType::LParen => {
+                TokenType::LParen | TokenType::LBrace => {
                     let _ = self.advance();
                     let expr = self.expression()?;
                     self.consume(TokenType::RParen, "Expect ')' after expression");
                     return Ok(Expr::Grouping(Box::new(expr)));
                 }
                 _ => {
-                    return Err(ParserError::UnknownPrimaryToken { line: token.line });
+                    return Err(ParserError::UnknownPrimaryToken {
+                        line: token.line,
+                        token_type: token.token_type,
+                    });
                 }
             }
         }
@@ -314,7 +320,7 @@ impl<'a> Parser<'a> {
 
     /// Top-level parsing function. Begins the parsing
     /// procedure with the `expression()` function.
-    pub(crate) fn parse(&mut self) -> Result<Expr<'a>, ParserError> {
+    pub fn parse(&mut self) -> Result<Expr<'a>, ParserError> {
         self.expression()
     }
 
